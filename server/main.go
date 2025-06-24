@@ -3,7 +3,6 @@ package main
 import (
 	"chatChannel/logic"
 	"chatChannel/protocol"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -15,27 +14,26 @@ const (
 	SERVER_TYPE = "tcp"
 )
 
-
 func main() {
 	fmt.Println("Server running....")
 
-	server, err := net.Listen(SERVER_TYPE, SERVER_HOST + ":" + SERVER_PORT)
+	server, err := net.Listen(SERVER_TYPE, SERVER_HOST+":"+SERVER_PORT)
 	if err != nil {
 		log.Fatalf("Error listening: %v", err)
-		return 
+		return
 	}
 
 	defer server.Close()
 
 	fmt.Println("Listening on " + SERVER_HOST + ":" + SERVER_PORT)
 	fmt.Println("Waiting for client...")
-
+	go handleConsoleInput()
 	for {
 		con, err := server.Accept()
 
 		if err != nil {
 			log.Fatalf("Error accepting: %v", err)
-			return 
+			return
 		}
 
 		fmt.Println("Client connected from: " + con.RemoteAddr().String())
@@ -44,7 +42,7 @@ func main() {
 	}
 }
 
-func handleConnection(conn net.Conn){
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	buffer := make([]byte, 1024)
@@ -52,7 +50,7 @@ func handleConnection(conn net.Conn){
 	var player *logic.Player = logic.CreatePlayer(conn)
 	go player.WriteLoop()
 	for {
-		_, err := conn.Read(buffer)
+		n, err := conn.Read(buffer)
 		if err != nil {
 			if err.Error() == "EOF" {
 				fmt.Println("client " + conn.RemoteAddr().String() + " disconnected.")
@@ -63,72 +61,28 @@ func handleConnection(conn net.Conn){
 			return
 		}
 
-		handleInput(buffer, player, conn.RemoteAddr().Network())
+		handleInput(buffer[:n], player, conn.RemoteAddr().String())
 	}
 }
 
-func handleInput(data []byte, player *logic.Player, connID string){
+func handleInput(data []byte, player *logic.Player, connID string) {
 	decodedMessage, err := protocol.UnmarshalMessage(data)
-
-	if err != nil{
+	if err != nil {
 		log.Printf("Error decoding message: %v", err)
 		player.Outgoing <- protocol.BuildErrorMessage("Invalid json data", err.Error())
-		return 
+		return
 	}
-	switch decodedMessage.Type{
+	switch decodedMessage.Type {
 	case "join":
-		var joinRequest protocol.JoinRequest
-		err := json.Unmarshal(data, &joinRequest)
-		if err != nil{
-			log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
-			player.Outgoing <- protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
-			return
-		}
-
-		if joinRequest.Random {
-			log.Printf("Client %s joins Random Game", connID)
-			player.JoinRandom()
-		} else {
-			log.Printf("Client %s wants to join game", joinRequest.Hash)
-			player.JoinHash(joinRequest.Hash)
-		}
+		handleJoin(data, player, connID)
 	case "start":
-		player.VoteStart()
+		handleStart(data, player, connID)
 	case "pass":
-		var passBomb protocol.PassBomb
-		err := json.Unmarshal(data, &passBomb)
-		if err != nil{
-			log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
-			player.Outgoing <-protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
-			return
-		}
-		if player != player.GetCurrentGame().GetCurrentHolder(){
-			return
-		}
-		err = player.GetCurrentGame().Pass(passBomb.Recipient)
-		if err != nil{
-			player.Outgoing <- protocol.BuildErrorMessage("Invalid Recipient", err.Error())
-		}
+		handlePass(data, player, connID)
 	case "chat":
-		var chatMsg protocol.ClientChatMessage
-		err := json.Unmarshal(data, &chatMsg) 
-		if err != nil{
-			log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
-			player.Outgoing <- protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
-			return
-		}
-		player.Chat(chatMsg.Content)
+		handleChat(data, player, connID)
 	case "ping":
-		var ping protocol.Ping
-		err := json.Unmarshal(data, &ping)
-		
-		if err != nil{
-			log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
-			player.Outgoing <- protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
-			return
-		}
-		player.Outgoing <- protocol.BuildPong()
-		
+		handlePing(data, player, connID)
 	default:
 		player.Outgoing <- protocol.BuildErrorMessage("Invalid Message Request", "Type not accepted")
 	}

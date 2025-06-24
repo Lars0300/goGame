@@ -3,58 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"log"
-	"time"
 )
-
-type Message struct {
-	Type string `json:"type"`
-}
-
-// client to server 
-type JoinRequest struct {
-	Message
-	Username string `json:"username"`
-	Hash string `json:"hash"`
-	Random bool `json:"random"`
-}
-
-type PassBomb struct {
-	Message
-	Recipient string `json:"Recipient"`
-}
-
-type ClientChatMessage struct {
-	Message
-	Content string `json:"Content"`
-}
-
-type Ping struct {
-	Message
-	Timestamp int64 `json:"timestamp"`
-}
-
-type StartMessage struct{
-	Message
-}
-
-// Server to Client Message
-type GameUpdate struct {
-	Message
-	Type string `json:"type"`
-	From string `json:"from"`
-	Msg string `json:"message"`
-	Time int64 `json:"time"`
-}
-
-type ErrorMessage struct {
-	Message
-	Error string
-	Details string
-}
-type Pong struct {
-	Message
-	Timestamp int64 `json:"timestamp"`
-}
 
 func MarshallMessage(msg interface{}) ([]byte, error) {
 	return json.Marshal(msg)
@@ -82,27 +31,27 @@ func BuildErrorMessage(err string, details string) ([]byte) {
 	}
 	return append(errData, '\n')
 }
-func BuildGameUpdate(updateType string, from string, msg string)([] byte){
+func BuildGameUpdate(updateType UpdateStatus, from string, msg string)([]byte){
 	gameUpdate := &GameUpdate{
 		Message: Message{Type: "update"},
-		Type: updateType,
+		UpdateType: updateType,
 		From: from,
 		Msg: msg,
 	}
 
 	data, err := json.Marshal(gameUpdate)
 	if err != nil{
-		log.Printf("Eror building gameUpdate with updateType %s, From %s, msg %s. Error: %s", updateType, from, msg, err)
+		log.Printf("Eror building gameUpdate with updateType %v, From %s, msg %s. Error: %s", updateType, from, msg, err)
 		return []byte{}
 	}
 
 	return append(data, '\n')
 }
 
-func BuildPong()([]byte){
+func BuildPong(timestamp int64)([]byte){
 	pong := Pong{
 			Message: Message{Type: "pong"},
-			Timestamp: time.Now().Unix(),
+			PingTimestamp: timestamp,
 	}
 
 	data, err := json.Marshal(pong)
@@ -113,3 +62,4 @@ func BuildPong()([]byte){
 
 	return append(data, '\n')
 }
+

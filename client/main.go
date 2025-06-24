@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"chatChannel/protocol"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -73,11 +74,25 @@ func main() {
 }
 
 func listenToServer(conn net.Conn) {
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+	buffer := make([]byte, 1024)
+
+	for{
+		n, err := conn.Read(buffer)
+
+		if err != nil {
+			if err.Error() == "EOF" {
+				fmt.Println("client " + conn.RemoteAddr().String() + " disconnected.")
+			} else {
+				fmt.Println("Error reading:", err.Error())
+				log.Fatalf("Error reading: %v", err)
+			}
+			return
+		}
+
+		handleWrite(buffer[:n])
 	}
 }
+
 
 func handleInput(text string, profile *Profile) ([]byte, error){
 	var encodedMsg []byte
@@ -86,11 +101,6 @@ func handleInput(text string, profile *Profile) ([]byte, error){
 			var key, message string
 			var found bool
 			key, message, found = strings.Cut(text," ") 
-
-			if !found{
-				fmt.Println("There needs to be text after your !command")
-				return nil, fmt.Errorf("no space found after !command: %v", text)
-			}
 			
 			switch strings.TrimPrefix(key, "!"){
 			case "pass":
@@ -101,6 +111,9 @@ func handleInput(text string, profile *Profile) ([]byte, error){
 				if !profile.GameActive{
 					fmt.Println("Game's over mate")
 					return nil, fmt.Errorf("games over")
+				}
+				if !found{
+					message = ""
 				}
 				passMsg := protocol.PassBomb{
 					Message: protocol.Message{Type: "pass_bomb"},
@@ -115,7 +128,7 @@ func handleInput(text string, profile *Profile) ([]byte, error){
 			case "ping":
 				pingMsg := protocol.Ping{
 					Message: protocol.Message{Type: "ping"},
-					Timestamp: time.Now().Unix(),
+					Timestamp: time.Now().UnixMilli(),
 				}
 				encodedMsg, err = protocol.MarshallMessage(pingMsg)
 
@@ -125,6 +138,9 @@ func handleInput(text string, profile *Profile) ([]byte, error){
 				}
 			case "join":
 				var random bool = false
+				if !found{
+					message = "random"
+				}
 				if message == "random"{
 					random = true
 				} else {
@@ -171,4 +187,36 @@ func handleInput(text string, profile *Profile) ([]byte, error){
 				}
 		}
 		return encodedMsg, nil
+}
+
+func handleWrite(data []byte){
+	decodedMessage, err := protocol.UnmarshalMessage(data)
+
+	if err != nil{
+		log.Printf("Error decoding message: %v", err)
+		return 
+	}
+	switch decodedMessage.Type{
+	case "pong":
+		var pong protocol.Pong
+
+		err = json.Unmarshal(data, &pong)
+
+		if err != nil{
+			log.Printf("Error unmarshalling message:  %s", err)
+		}
+
+		writePong(&pong)
+	case "update":
+		var update protocol.GameUpdate
+
+		err = json.Unmarshal(data, &update)
+
+		if err != nil{
+			log.Printf("Error unmarshalling message:  %s", err)
+		}
+		writeGameUpdate(&update)
+	}
+		
+
 }

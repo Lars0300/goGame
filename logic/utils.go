@@ -11,17 +11,17 @@ const (
 )
 
 var (
-	hashToGame map[string]*Game = make(map[string]*Game)
-	openGames map[*Game]struct{} = make(map[*Game]struct{})
+	HashToGame map[string]*Game   = make(map[string]*Game)
+	OpenGames  map[*Game]struct{} = make(map[*Game]struct{})
+	hashLetters []rune= []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
 func generateHash() string {
-	letters := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	hash := make([]rune, 5)
 	for i := range hash {
-		hash[i] = letters[r.Intn(len(letters))]
+		hash[i] = hashLetters[r.Intn(len(hashLetters))]
 	}
 	return string(hash)
 }
@@ -37,3 +37,14 @@ func generateUsername() string {
 	return string(name)
 }
 
+func isValidHash(suggestedHash string) bool{
+	if len(suggestedHash) != 5{
+		return false
+	}
+	for _, letter := range suggestedHash{
+		if letter < 'A' || letter > 'Z'{
+			return false
+		}
+	}
+	return true
+}
