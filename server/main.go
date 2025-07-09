@@ -15,7 +15,7 @@ const (
 )
 
 func main() {
-	fmt.Println("Server running....")
+	fmt.Println("Server running...")
 
 	server, err := net.Listen(SERVER_TYPE, SERVER_HOST+":"+SERVER_PORT)
 	if err != nil {
