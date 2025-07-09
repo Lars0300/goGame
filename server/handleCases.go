@@ -44,6 +44,10 @@ func handleStart(data []byte, player *logic.Player, connID string) {
 		log.Println("Player has already voted, returning")
 		return
 	}
+	if currentGame.OnlyOnePlayer(){
+		log.Println("Can't play alone mate")
+		return
+	}
 	currentGame.UpdateBroadcast(protocol.BuildGameUpdate(protocol.VoteStart, "Game", fmt.Sprintf("Player %s votes to start the game", player.GetUsername())))
 	player.VoteStart()
 }
