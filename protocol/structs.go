@@ -19,6 +19,10 @@ type PassBomb struct {
 	Recipient string `json:"Recipient"`
 }
 
+type ChangeName struct{
+	Message
+	Name string `json:"new_name"`
+}
 type ClientChatMessage struct {
 	Message
 	Content string `json:"Content"`
@@ -41,7 +45,10 @@ type GameUpdate struct {
 	Msg string `json:"message"`
 	Time int64 `json:"time"`
 }
-
+type ChangeConfirm struct {
+	Message
+	Name string `json:"name"`
+}
 type ErrorMessage struct {
 	Message
 	Error string
@@ -65,5 +72,8 @@ const (
 	ChatAlive
 	ChatBomb
 	ChatDead
-
+	Intro
+	PongMsg
+	JoinFailed
+	NameChange
 )

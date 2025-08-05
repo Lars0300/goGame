@@ -28,6 +28,33 @@ func (g *Game) AlreadyVotedToStart(player *Player) (bool){
 	return inMap
 }
 
+func (g*Game) RemovePlayer(player *Player){
+	delete(g.alivePlayers, player)
+	delete(g.startingPlayers, player)
+	for i, gamePlayer := range(g.players){
+		if gamePlayer == player{
+			g.players = append(g.players[:i], g.players[i+1:]...)
+			break
+		}
+	}
+	if len(g.players) == 0{
+		delete(HashToGame, g.hash)
+		delete(OpenGames, g)
+		return
+	}
+	
+	if len(g.players) == 1{
+		g.endGame()
+
+	}
+	if g.currentHolder == player{
+		g.currentHolder = nil
+		for key, _ := range(g.alivePlayers){
+			g.currentHolder = key
+		}
+
+	}
+}
 func (g *Game) broadcast() {
 	log.Printf("Starting Broadcast for Game %s", g.hash)
 	for msg := range g.broadcastChannel {
@@ -88,14 +115,14 @@ func (g *Game) endGame() {
 	for _, player := range g.players {
 		g.alivePlayers[player] = struct{}{}
 	}
-	var broadcastMessage string = fmt.Sprintf("Game Over! \n The Winner is %s", g.currentHolder.playerID)
+	var broadcastMessage string = fmt.Sprintf("Game Over! \nThe Winner is %s", g.currentHolder.username)
 	g.broadcastChannel <- protocol.BuildGameUpdate(protocol.EndGame, "Game", broadcastMessage)
 	g.startingPlayers = make(map[*Player]struct{})
 	OpenGames[g] = struct{}{}
 	g.hasStarted = false
 }
 func (g *Game) Pass(toPlayer *Player) error {
-	log.Printf("Passing now from %s to %s", g.currentHolder.playerID, toPlayer.username)
+	log.Printf("Passing now from %s to %s", g.currentHolder.username, toPlayer.username)
 
 	broadcastMessage := fmt.Sprintf("%s holds the bomb now", toPlayer.username)
 	g.broadcastChannel <- protocol.BuildGameUpdate(protocol.Pass, "Game", broadcastMessage)
@@ -164,4 +191,8 @@ func (g *Game) ToString() string {
 
 func (g *Game) HasStarted() (bool){
 	return g.hasStarted
+}
+
+func (g *Game) OnlyOnePlayer() (bool){
+	return len(g.alivePlayers) == 1
 }

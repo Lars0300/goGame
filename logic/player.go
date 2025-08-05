@@ -2,6 +2,7 @@ package logic
 
 import (
 	"chatChannel/protocol"
+	"chatChannel/writing"
 	"fmt"
 	"log"
 	"net"
@@ -12,16 +13,16 @@ type Player struct {
 	currentGame *Game
 	Outgoing    chan []byte
 	connection  net.Conn
-	username string
+	username    string
 }
 
 func CreatePlayer(conn net.Conn) *Player {
 	var player *Player = &Player{
-		playerID:    generateUsername(),
+		playerID:    generatePlayerID(),
 		currentGame: nil,
 		connection:  conn,
 		Outgoing:    make(chan []byte, 1024),
-		username: "",
+		username:    "",
 	}
 
 	return player
@@ -31,31 +32,35 @@ func (player *Player) GetCurrentGame() *Game {
 	return player.currentGame
 }
 
-func (player *Player) ChangePlayerID(playerID string) {
-	player.playerID = playerID
-}
-
 func (player *Player) GetPlayerID() string {
 	return player.playerID
 }
 
 func (player *Player) JoinRandom() {
 	for game := range OpenGames {
-		game.addPlayer(player)
-		return
+		err := player.JoinHash(game.hash)
+		if err == nil{
+			return
+		}
 	}
 	player.createGame("")
 }
 
-func (player *Player) JoinHash(hash string) (error){
+func (player *Player) JoinHash(hash string) error {
 	game, ok := HashToGame[hash]
 	if !ok {
 		log.Printf("Game for the hash %s not found, building game for it now\n", hash)
 		player.currentGame = player.createGame(hash)
 		return nil
 	}
-	if game.hasStarted{
+	if game.hasStarted {
 		return fmt.Errorf("Game has already started")
+	}
+	for _, currPlayer := range(game.players){
+		if player.username == currPlayer.username{
+			player.Outgoing <- protocol.BuildGameUpdate(protocol.JoinFailed, "Game", fmt.Sprintf(writing.GlobalDialog.Game.GameHost.CantJoin, hash, hash));
+			return fmt.Errorf("username has already been taken for player %s and game %s", player.playerID, game.hash)
+		}
 	}
 	game.addPlayer(player)
 	return nil
@@ -85,7 +90,7 @@ func (player *Player) createGame(suggestedHash string) *Game {
 		broadcastChannel: make(chan []byte, 1024),
 		startingPlayers:  map[*Player]struct{}{},
 		hash:             hash,
-		hasStarted: false,
+		hasStarted:       false,
 	}
 
 	game.addPlayer(player)
@@ -98,7 +103,7 @@ func (player *Player) createGame(suggestedHash string) *Game {
 }
 
 func (player *Player) VoteStart() {
-	log.Printf("Player %s votes for start", player.playerID)
+	log.Printf("Player %s votes for start", player.username)
 	player.currentGame.startingPlayers[player] = struct{}{}
 	player.currentGame.checkForStart()
 }
@@ -112,21 +117,28 @@ func (player *Player) WriteLoop() {
 }
 
 func (player *Player) Chat(content string) {
-	var chatType protocol.UpdateStatus 
+	var chatType protocol.UpdateStatus
 	var currentGame *Game = player.currentGame
-
-	if _, inSet := currentGame.alivePlayers[player]; !inSet{
+	
+	if currentGame == nil {
+		player.Outgoing <- protocol.BuildGameUpdate(protocol.ChatDead, player.username, content)
+		return
+	}
+	if _, inSet := currentGame.alivePlayers[player]; !inSet {
 		chatType = protocol.ChatDead
-	}	else {
-		if player.playerID == player.currentGame.currentHolder.username{
+	} else {
+		if player.username == player.currentGame.currentHolder.username {
 			chatType = protocol.ChatBomb
-		}	else {
+		} else {
 			chatType = protocol.ChatAlive
 		}
 	}
-	player.currentGame.broadcastChannel <- protocol.BuildGameUpdate(chatType, player.playerID, content)
+	player.currentGame.broadcastChannel <- protocol.BuildGameUpdate(chatType, player.username, content)
 }
 
 func (player *Player) GetUsername() string {
 	return player.username
+}
+func (player *Player) SetUsername(username string){
+	player.username = username
 }

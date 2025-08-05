@@ -15,6 +15,8 @@ func handleJoin(data []byte, player *logic.Player, connID string) {
 		player.Outgoing <- protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
 		return
 	}
+	player.SetUsername(joinRequest.Username)
+	beforeGame := player.GetCurrentGame()
 	if joinRequest.Random {
 		log.Printf("Client %s joins Random Game", connID)
 		player.JoinRandom()
@@ -22,14 +24,19 @@ func handleJoin(data []byte, player *logic.Player, connID string) {
 		log.Printf("Client %s wants to join game %s", connID, joinRequest.Hash)
 		err = player.JoinHash(joinRequest.Hash)
 	}
-
+	
 	if err != nil {
 		log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
 		player.Outgoing <- protocol.BuildErrorMessage("Coldn't join game", err.Error())
 		return
 	}
+	fmt.Printf("beforeGame")
+	if beforeGame != nil{
+		beforeGame.RemovePlayer(player)
+	}
+	
 	var currentGame *logic.Game = player.GetCurrentGame()
-	currentGame.UpdateBroadcast(protocol.BuildGameUpdate(protocol.JoinGame, "Game", fmt.Sprintf("Player %s joins the game", player.GetPlayerID())))
+	currentGame.UpdateBroadcast(protocol.BuildGameUpdate(protocol.JoinGame, "Game", fmt.Sprintf("Player %s joins the game", player.GetUsername())))
 
 }
 
@@ -92,13 +99,30 @@ func handleChat(data []byte, player *logic.Player, connID string) {
 }
 
 func handlePing(data []byte, player *logic.Player, connID string) {
-			var ping protocol.Ping
-		err := json.Unmarshal(data, &ping)
+	var ping protocol.Ping
+	err := json.Unmarshal(data, &ping)
 
-		if err != nil {
-			log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
-			player.Outgoing <- protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
-			return
-		}
-		player.Outgoing <- protocol.BuildPong(ping.Timestamp)
+	if err != nil {
+		log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
+		player.Outgoing <- protocol.BuildErrorMessage("Invalid Join Request", "Malformed message")
+		return
+	}
+	player.Outgoing <- protocol.BuildPong(ping.Timestamp)
+}
+
+func handleChange(data []byte, player *logic.Player, connID string){
+	var change protocol.ChangeName
+	
+
+	err := json.Unmarshal(data, &change)
+
+	if err != nil {
+		log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
+		player.Outgoing <- protocol.BuildErrorMessage("Invalid Change Request", "Malformed message")
+		return
+	}
+	player.SetUsername(change.Name)
+	fmt.Println(change)
+	player.Outgoing <- protocol.BuildGameUpdate(protocol.NameChange, "Game", fmt.Sprintf("Your name has changed to %s.", change.Name))
+	player.Outgoing <- protocol.BuildChangeConfirm(change.Name)
 }

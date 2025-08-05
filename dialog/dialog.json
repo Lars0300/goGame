@@ -1,0 +1,22 @@
+{
+  "start": {
+    "greeting": "Ah nice to meet you %s !",
+    "intro": "Hello and welcome to Hot Potato!\nI'm Mr. Potato, your game host",
+    "enterName": "First tell me your name:",
+    "info": "To now join a game type !join \u003cgameHash\u003e\nA gameHash needs to be 5 capitalized letters. \nType nothing to join a game at random!",
+    "help": "If you need further help type !help"
+  },
+  "game": {
+    "host": {
+      "update": "",
+      "toss": "",
+      "kill": "",
+      "end": "",
+      "cant_join": "Couldn't join Game with hash %s as your username is already taken.\nChange it with !change \u003cnewName\u003e and then join with !join %s !",
+      "name_change": "Your name has been changed to %s"
+    }
+  },
+  "help": {
+    "menu": ""
+  }
+}

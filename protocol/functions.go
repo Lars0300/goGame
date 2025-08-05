@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"log"
+	"time"
 )
 
 func MarshallMessage(msg interface{}) ([]byte, error) {
@@ -37,11 +38,27 @@ func BuildGameUpdate(updateType UpdateStatus, from string, msg string)([]byte){
 		UpdateType: updateType,
 		From: from,
 		Msg: msg,
+		Time: time.Now().Unix(),
 	}
 
 	data, err := json.Marshal(gameUpdate)
 	if err != nil{
 		log.Printf("Eror building gameUpdate with updateType %v, From %s, msg %s. Error: %s", updateType, from, msg, err)
+		return []byte{}
+	}
+
+	return append(data, '\n')
+}
+
+func BuildChangeConfirm(name string) ([]byte){
+	confirm := ChangeConfirm{
+			Message: Message{Type: "changeConfirm"},
+			Name: name,
+	}
+
+	data, err := json.Marshal(confirm)
+	if err != nil{
+		log.Printf("Eror building pong. Error: %s", err)
 		return []byte{}
 	}
 

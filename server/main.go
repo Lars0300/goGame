@@ -3,6 +3,7 @@ package main
 import (
 	"chatChannel/logic"
 	"chatChannel/protocol"
+	"chatChannel/writing"
 	"fmt"
 	"log"
 	"net"
@@ -25,6 +26,12 @@ func main() {
 
 	defer server.Close()
 
+	err = writing.BuildDialog()
+
+	if err != nil {
+		log.Println("Error loading dialog %v", err)
+		return
+	}
 	fmt.Println("Listening on " + SERVER_HOST + ":" + SERVER_PORT)
 	fmt.Println("Waiting for client...")
 	go handleConsoleInput()
@@ -83,6 +90,8 @@ func handleInput(data []byte, player *logic.Player, connID string) {
 		handleChat(data, player, connID)
 	case "ping":
 		handlePing(data, player, connID)
+	case "change":
+		handleChange(data, player, connID)
 	default:
 		player.Outgoing <- protocol.BuildErrorMessage("Invalid Message Request", "Type not accepted")
 	}
