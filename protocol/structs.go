@@ -76,4 +76,5 @@ const (
 	PongMsg
 	JoinFailed
 	NameChange
+	Help
 )

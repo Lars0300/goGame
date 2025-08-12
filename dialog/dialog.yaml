@@ -1,0 +1,23 @@
+start:
+    greeting: Ah nice to meet you %s !
+    intro: |
+        Hello and welcome to Hot Potato!
+        I'm Mr. Potato, your game host
+    enterName: First tell me your name
+    info: |
+        To now join a game type !join <gameHash>
+        A gameHash needs to be 5 capitalized letters!
+        Type just !join to join a game at random!
+    help: If you need further help type !help
+game:
+    host:
+        update: Change me!
+        toss: Change me!
+        kill: Change me!
+        end: Change me!
+        cant_join: |
+            Couldn't join Game with hash %s as your username is already taken.
+            Change it with !change <newName> and then join with !join %s !
+        name_change: Your name has been changed to %s!
+help:
+    menu: "!ping          - Pings the server\n!join          - Join random game.\n               - Creates game when no open game is available\n!join <Hash>   - Join game for a given Hash.\n               - Hash must be 5 capitalized letters\n               - Else it's treated the same as !join.\n               - Creates new game if Hash doesn't exist.\n!change        - Change your username.\n               - A unique username is required for a game!\n               \n---------------------------In Game---------------------------\n!pass <player> - Passes the bomb to the player.\n!start         - Vote to start the game.\n               - Majority vote needed for game start.\n"

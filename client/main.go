@@ -34,11 +34,10 @@ func main() {
 		fmt.Println("Error connecting:", err)
 		return
 	}
-
 	err = writing.BuildDialog()
 
 	if err != nil {
-		log.Println("Error loading dialog %v", err)
+		log.Printf("Error loading dialog %v\n", err)
 		return
 	}
 	defer conn.Close()
@@ -180,7 +179,9 @@ func handleInput(text string, profile *Profile) ([]byte, error) {
 				log.Printf("Error encoding change message: %v", changeMsg)
 				return nil, err
 			}
-
+		case "help":
+			writing.WriteHelp()
+			return nil, fmt.Errorf("only needs an error so nothing is send ^^")
 		default:
 			log.Printf("Error using command : %v", text)
 			return nil, fmt.Errorf("error using command : %v", text)

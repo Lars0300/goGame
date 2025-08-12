@@ -11,7 +11,23 @@ The server is hosted on `localhost/8080`
 Multiple people can join a game, where one 'hot potato' is given to a random player. Players can give their potato to the other players. The exploding time is set to random. If the potato does explode the player holding it is out until the end of the game
 The winner is the last person standing.
 ### Commands
-Type commands into the console to play. A comprehensive command list can be seen by typing `!help` or down below 
+Type commands into the console to play. A comprehensive command list can be seen by typing `!help` or down below
+
+    !ping          - Pings the server
+    !join          - Join random game.
+                   - Creates game when no open game is available
+    !join <Hash>   - Join game for a given Hash.
+                   - Hash must be 5 capitalized letters
+                   - Else it's treated the same as !join.
+                   - Creates new game if Hash doesn't exist.
+    !change        - Change your username.
+                   - A unique username is required for a game!
+
+    ---------------------------In Game---------------------------
+
+    !pass <player> - Passes the bomb to the player.
+    !start         - Vote to start the game. 
+                   - Majority vote needed for game start.
 ## Developer Notes
 ### Changing Dialog
 If you want to change the messages being send, edit the dialog/dialog.json file.

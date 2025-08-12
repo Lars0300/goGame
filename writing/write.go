@@ -21,6 +21,7 @@ var (
 		protocol.Intro: "\033[31m",
 		protocol.PongMsg: "\033[32m",
 		protocol.JoinFailed: "\033[31m",
+		protocol.Help: "\033[33m",
 	}
 )
 

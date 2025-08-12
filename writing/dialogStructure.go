@@ -1,7 +1,7 @@
 package writing
 
 import (
-	"encoding/json"
+	"gopkg.in/yaml.v3"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,70 +10,87 @@ import (
 
 const placeholder string = "Change me!"
 const dialogFileDirectory string = "dialog"
+const filename string = "dialog.yaml"
 
 var GlobalDialog *Dialog
 
 type Dialog struct {
 	Start struct {
-		Greeting  string `json:"greeting"`
-		Intro     string `json:"intro"`
-		EnterName string `json:"enterName"`
-		Info      string `json:"info"`
-		Help      string `json:"help"`
-	} `json:"start"`
+		Greeting  string `yaml:"greeting"`
+		Intro     string `yaml:"intro"`
+		EnterName string `yaml:"enterName"`
+		Info      string `yaml:"info"`
+		Help      string `yaml:"help"`
+	} `yaml:"start"`
 	Game struct {
 		GameHost struct {
-			Update string `json:"update"`
-			Toss   string `json:"toss"`
-			Kill   string `json:"kill"`
-			End    string `json:"end"`
-			CantJoin string `json:"cant_join"`
-			ChangeName string `json:"name_change"`
-		} `json:"host"`
-	} `json:"game"`
+			Update string `yaml:"update"`
+			Toss   string `yaml:"toss"`
+			Kill   string `yaml:"kill"`
+			End    string `yaml:"end"`
+			CantJoin string `yaml:"cant_join"`
+			ChangeName string `yaml:"name_change"`
+		} `yaml:"host"`
+	} `yaml:"game"`
 	Help struct {
-		HelpMenu string `json:"menu"`
-	} `json:"help"`
+		HelpMenu string `yaml:"menu"`
+	} `yaml:"help"`
 }
 
 func BuildDialog() (error) {
 	GlobalDialog = &Dialog{}
-	jsonPath, err := getDialogPath(dialogFileDirectory)
+	yamlPath, err := getDialogPath(dialogFileDirectory)
 	if err != nil {
 		return err
 	}
-	if data, err := os.ReadFile(jsonPath); err == nil {
-		_ = json.Unmarshal(data, GlobalDialog)
+	if data, err := os.ReadFile(yamlPath); err == nil {
+		_ = yaml.Unmarshal(data, GlobalDialog)
 	}
+	
+	fillEmptyStrings(reflect.ValueOf(GlobalDialog))
 
-	fillEmptyStrings(GlobalDialog)
-
-	data, err := json.MarshalIndent(*GlobalDialog, "", "  ")
+	data, err := yaml.Marshal(*GlobalDialog)
 
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(jsonPath, data, 0644)
+	return os.WriteFile(yamlPath, data, 0644)
 }
 
-func fillEmptyStrings(ptr interface{}) {
-	v := reflect.ValueOf(ptr).Elem()
-	t := v.Type()
+func fillEmptyStrings(v reflect.Value) {
+	if !v.IsValid(){
+		return
+	}
+	
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		fillEmptyStrings(v.Elem())
+		return
+	}
 
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldType := t.Field(i)
+	switch v.Kind(){
+	case reflect.Struct:
+		for i:= 0; i < v.NumField(); i++{
+			field := v.Field(i)
 
-		if field.Kind() == reflect.Ptr {
-			if field.IsNil() {
-				field.Set(reflect.New(fieldType.Type.Elem()))
+			if field.CanSet() || field.Kind() == reflect.Struct || field.Kind() == reflect.Ptr {
+				fillEmptyStrings(field)
+			} else {
+				if field.CanAddr() {
+					fillEmptyStrings((field.Addr()))
+				}
 			}
-			fillEmptyStrings(field.Interface())
-		} else if field.Kind() == reflect.String {
-			if field.String() == "" {
-				field.SetString(placeholder)
-			}
+		}
+	case reflect.String:
+		if v.String() == ""{
+			v.SetString(placeholder)
+		}
+	case reflect.Slice, reflect.Array:
+		for i:= 0 ; i < v.Len(); i++{
+			fillEmptyStrings(v.Index(i))
 		}
 	}
 }
@@ -100,8 +117,8 @@ func getDialogPath(directory string) (string, error) {
 	} else if err != nil {
 		return "", err
 	} else if !info.IsDir() {
-		return "", fmt.Errorf("Path exists but is not directory")
+		return "", fmt.Errorf("path exists but is not directory")
 	}
 
-	return filepath.Join(targetDir, "dialog.json"), nil
+	return filepath.Join(targetDir, filename), nil
 }
