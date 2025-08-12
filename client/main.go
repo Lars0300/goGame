@@ -108,7 +108,7 @@ func handleInput(text string, profile *Profile) ([]byte, error) {
 				message = ""
 			}
 			passMsg := protocol.PassBomb{
-				Message:   protocol.Message{Type: "pass_bomb"},
+				Message:   protocol.Message{Type: "pass"},
 				Recipient: message,
 			}
 			encodedMsg, err = protocol.MarshallMessage(passMsg)
@@ -238,8 +238,15 @@ func handleWrite(data []byte, profile *Profile) {
 			log.Printf("Error unmarshalling message %s", err)
 		}
 		profile.name = confirm.Name
-		fmt.Println(profile)
 		writing.WriteChangeConfirm(confirm.Name)
+	case "error":
+		var errMsg protocol.ErrorMessage
+
+		err = json.Unmarshal(data, &errMsg)
+		if err != nil{
+			log.Printf("Error unmarshalling message %s", err)
+		}
+		fmt.Println(errMsg.Error)
 	default:
 		log.Printf("message type %s coudlnt be decoded", decodedMessage.Type)
 	}
