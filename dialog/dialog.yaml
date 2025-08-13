@@ -21,3 +21,5 @@ game:
         name_change: Your name has been changed to %s!
 help:
     menu: "---------------------------Always---------------------------\n!ping          - Pings the server\n!join          - Join random game.\n               - Creates game when no open game is available\n!join <Hash>   - Join game for a given Hash.\n               - Hash must be 5 capitalized letters\n               - Else it's treated the same as !join.\n               - Creates new game if Hash doesn't exist.\n!change        - Change your username.\n               - A unique username is required for a game!\n               \n---------------------------In Game---------------------------\n!pass <player> - Passes the bomb to the player.\n!start         - Vote to start the game.\n               - Majority vote needed for game start.\n"
+error:
+    

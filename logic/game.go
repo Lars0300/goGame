@@ -123,6 +123,15 @@ func (g *Game) endGame() {
 }
 func (g *Game) Pass(toPlayer *Player) error {
 	log.Printf("Passing now from %s to %s", g.currentHolder.username, toPlayer.username)
+	if !g.hasPlayer(toPlayer){
+		return fmt.Errorf("player doesn't exist. Type !alive to see alive players")
+	}
+	if !g.playerAlive(toPlayer){
+		return fmt.Errorf("player is not alive. Type !alive to see all alive players")
+	}
+	if !(g.currentHolder == toPlayer){
+		return fmt.Errorf("can't pass the bomb to yourself. Type !alive to se all alive players")
+	}
 	g.currentHolder = toPlayer
 	return nil
 }
@@ -192,4 +201,18 @@ func (g *Game) HasStarted() (bool){
 
 func (g *Game) OnlyOnePlayer() (bool){
 	return len(g.alivePlayers) == 1
+}
+
+func (g *Game) playerAlive(player *Player) bool{
+	_, inSet := g.alivePlayers[player];
+	return inSet
+}
+
+func (g *Game) hasPlayer(player *Player) bool {
+	for _, activePlayers := range(g.players){
+		if activePlayers == player{
+			return true
+		}
+	}
+	return false
 }

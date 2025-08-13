@@ -4,6 +4,7 @@ import (
 	"chatChannel/logic"
 	"chatChannel/protocol"
 	"chatChannel/writing"
+	"chatChannel/err"
 	"fmt"
 	"log"
 	"net"
@@ -11,7 +12,7 @@ import (
 
 const (
 	SERVER_HOST = "localhost"
-	SERVER_PORT = "8080"
+	SERVER_PORT = "8081"
 	SERVER_TYPE = "tcp"
 )
 
