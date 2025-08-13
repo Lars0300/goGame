@@ -99,7 +99,7 @@ func (g *Game) gameLoop() {
 
 func (g *Game) killPlayer() {
 	delete(g.alivePlayers, g.currentHolder)
-	var broadcastMessage string = fmt.Sprintf("Player %s got eliminated", g.currentHolder.playerID)
+	var broadcastMessage string = fmt.Sprintf("Player %s got eliminated", g.currentHolder.username)
 	g.broadcastChannel <- protocol.BuildGameUpdate(protocol.KillPlayer, "Game", broadcastMessage)
 	for player := range g.alivePlayers {
 		g.currentHolder = player
@@ -123,9 +123,6 @@ func (g *Game) endGame() {
 }
 func (g *Game) Pass(toPlayer *Player) error {
 	log.Printf("Passing now from %s to %s", g.currentHolder.username, toPlayer.username)
-
-	broadcastMessage := fmt.Sprintf("%s holds the bomb now", toPlayer.username)
-	g.broadcastChannel <- protocol.BuildGameUpdate(protocol.Pass, "Game", broadcastMessage)
 	g.currentHolder = toPlayer
 	return nil
 }

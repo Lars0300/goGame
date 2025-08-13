@@ -1,11 +1,10 @@
 package writing
 
 import (
-	"chatChannel/protocol"
-	"time"
+	"fmt"
 )
 
 func WriteHelp() {
 	var d *Dialog = GlobalDialog
-	writeOut(protocol.Help, "Game", d.Help.HelpMenu, time.Now().Unix(), time.Duration(typingSpeed*time.Millisecond))
+	fmt.Println(d.Help.HelpMenu)
 }

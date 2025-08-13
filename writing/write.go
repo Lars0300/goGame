@@ -32,6 +32,9 @@ func writeOut(updateType protocol.UpdateStatus, from, msg string, timestamp int6
 	
 	var lineArray []string = strings.Split(msg, "\n")
 	for _, line := range(lineArray){
+		if line == ""{
+			continue
+		}
 		var msgArr []string = strings.Split(line, " ")
 		fmt.Printf("%s %s%s\033[0m:> ", clockString, colorMap[updateType], from)
 		for _, word := range(msgArr){

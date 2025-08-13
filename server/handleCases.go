@@ -62,7 +62,6 @@ func handleStart(data []byte, player *logic.Player, connID string) {
 func handlePass(data []byte, player *logic.Player, connID string) {
 	var passBomb protocol.PassBomb
 	var currentGame *logic.Game = player.GetCurrentGame()
-	currentGame = player.GetCurrentGame()
 	err := json.Unmarshal(data, &passBomb)
 	if err != nil {
 		log.Printf("Error for Client %s while unmarshaling JoinRequest: %v", connID, err)
